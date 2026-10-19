@@ -184,3 +184,186 @@ all:
 - Database
 
 2. Global company with hundresa of servers
+
+## Ansible variables
+Ansible variables are placeholders that store values like strings, numbers, lists, or dictionary and make playbook dynamic instead of hardcoding values. 
+### Variable Types
+- String
+- Number
+- Boolean
+- List
+- Dictionary
+
+### Registrying Variables
+You can create variables from the output of an ansible task with the keyword _register_. You can use the registered variables in any later task in your play.
+
+### Variable scoping
+Variable scope defined the accessibility or visibility of a variable where it can be reached.
+Ansible has three main scopes
+- Global: This is set by config, environment variables and the command line
+- Play: Each play and contained structures, vars entries (vars; vars_files; vars_prompt), role defaults and vars.
+- Host: Variables directly associated to a host, like inventory, include_vars, facts or registered task outputs.
+
+### Magic variables
+The magic variable is a built-in, reserved system variable automatically created by Ansible to provide information about the current execution context, inventory structure, host status, and runtime environment.
+
+#### Common Magic Variables
+- hostvars: A dictionary containing variables and gathered facts assigned to any host in the play. You can use it to reference values or IP addresses from other servers.
+- groups: A dictionary listing all inventory groups and the hostnames belonging to each group.
+- group_names: A list of all the inventory groups that the current host is a member of.
+- inventory_hostname: The name of the current host as defined in your inventory file (unlike ansible_hostname, which is a gathered fact from the remote system).
+- inventory_hostname_short: The short version of inventory_hostname up to the first period (excluding the domain name).
+- ansible_play_hosts: A list of all active hosts still participating in the current play.
+- ansible_play_batch: A list of hostnames currently in scope for the active batch (controlled by the serial keyword).
+- playbook_dir: The directory path where the currently executing playbook is located.
+- inventory_dir & inventory_file: The directory path and filename of the inventory source being used.
+- ansible_check_mode: A boolean (True or False) indicating whether Ansible is running with the --check flag.
+- ansible_version: A dictionary detailing the running version of Ansible (full, major, minor, revision, string)
+
+#### Ansible facts
+Ansible facts are the information collected by Ansible regarding the managed hosts, including operating systems, IP addresses, attached filesystems, and more. 
+
+```
+playbook
+
+  ansible.cfg
+
+  [defaults]
+host_key_checking = False
+
+  inventory
+
+localhost ansible_connection=local nameserver_ip=8.8.8.8 snmp_port=160-161
+node01 ansible_host=node01 ansible_password=caleston123
+node02 ansible_host=node02 ansible_password=caleston123
+[web_nodes]
+node01
+node02
+
+ 
+
+[all:vars]
+app_list=['vim', 'sqlite', 'jq']
+user_details={'username': 'admin', 'password': 'secret_pass', 'email': 'admin@example.com'}
+
+ playbook.yaml
+
+---
+- name: 'Add nameserver in resolv.conf file on localhost'
+  hosts: localhost
+  become: true
+  tasks:
+    - name: 'Add nameserver in resolv.conf file'
+      ansible.builtin.lineinfile:
+        path: /tmp/resolv.conf
+        line: 'nameserver '{{nameserver_ip}}'
+
+===============================
+
+---
+- hosts: localhost
+
+ vars:
+
+   car_model: 'BMW M3'
+
+   country_name: 'USA'
+
+.  title: 'SYstems Engineer'
+  tasks:
+    - name: Print car model
+      ansible.builtin.command: 'echo "My car is {{car_model}}'
+    - name: Print country name
+      ansible.builtin.command: 'echo "I live in the {{country_name}}"'
+    - name: Print job title
+      ansible.builtin.command: 'echo "I work as a {{title}}"'
+
+========================
+Inventory
+
+ 
+
+localhost ansible_connection=local nameserver_ip=8.8.8.8 snmp_port=160-161
+node01 ansible_host=node01 ansible_password=caleston123
+node02 ansible_host=node02 ansible_password=caleston123
+[web_nodes]
+node01
+node02
+
+ 
+
+[all:vars]
+app_list=['vim', 'sqlite', 'jq']
+user_details={'username': 'admin', 'password': 'secret_pass', 'email': 'admin@example.com'}
+
+ 
+
+app_install.yaml
+
+---
+- hosts: web_nodes
+  become: true
+  tasks:
+    - name: Install applications
+      ansible.builtin.dnf:
+        name: "{{ item }}"
+        state: present
+      loop: '{{app_list}}'
+
+ 
+Inventory
+
+localhost ansible_connection=local nameserver_ip=8.8.8.8 snmp_port=160-161
+node01 ansible_host=node01 ansible_password=caleston123
+node02 ansible_host=node02 ansible_password=caleston123
+[web_nodes]
+node01
+node02
+
+ 
+
+[all:vars]
+app_list=['vim', 'sqlite', 'jq']
+user_details={'username': 'admin', 'password': 'secret_pass', 'email': 'admin@example.com'}
+
+ 
+
+User_setup.yaml
+
+---
+- hosts: all
+  become: true
+  tasks:
+    - name: Set up user
+      ansible.builtin.user:
+        name: '{{user_details.username}}'
+        password: '{{user_details.password}}'
+        comment: '{{user_details.email}}'
+        state: present
+```
+
+## Ansible Playbook
+A playbook is a single YAML file that holds a set of plays.
+
+- verify the playbook to catch error or unexpected behavior before run it. This can be done by
+  - check mode - dry run (ansible-playbook playbook.yaml --check)
+  - diff mode - (ansible-playbook playbook.yaml --check --diff)
+  - Syntax check - (ansible-playbook playbook.yaml --syntax-check)
+
+### Ansible Lint
+A code reviwer for the playbook using _ansible-lint playbook.yaml_
+
+## Ansible Module
+Ansible modules are reusable, standalone scripts that Ansible copies to and executes on managed nodes or via APIs to perform specific tasks
+
+### Common Types & Examples
+- _System Modules_: Manage operating system elements like users, groups, and services (e.g., user, group, service, systemd).
+- _Packaging Modules_: Handle software installation across different Linux distributions (e.g., ansible.builtin.apt, ansible.builtin.dnf, pip).
+- _File Modules_: Handle copying files, setting permissions, and managing directories (e.g., copy, file, template).
+- _Cloud & API Modules_: Provision and manage resources on platforms like AWS, Azure, or Google Cloud (e.g., amazon.aws.ec2_instance).
+
+### How They Work
+1. Invocation: You call a module inside an Ansible task (within a playbook) or via an ad-hoc command.
+2. Transfer: Ansible packages the module and sends it to a temporary location on the remote managed node (over SSH or WinRM).
+3. Execution: The module runs locally on the managed node, executes the action, and prints a JSON result.
+4. Cleanup: Ansible removes the temporary script file from the remote node.
