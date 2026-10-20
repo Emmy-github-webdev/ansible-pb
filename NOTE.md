@@ -380,3 +380,62 @@ Ansible plugins are pieces of reusable code that augument or extend Ansible core
 - _Vars Plugins_: Inject extra variable data into Ansible runs that do not originate from an inventory or a command-line argument (this is how internal features like host_vars and group_vars operate). 
 - _Action Plugins_: Act as front-ends to modules, allowing processing to happen on the controller machine before the actual module executes on the target node. 
 - _Module plugins_
+
+## Ansible Handler
+In Ansible, handlers are special tasks that only run when triggered (notified) by another task, and only if that task actually makes a change to the system for example: the Nginx service will only reload if the ansible.builtin.template task actually modifies the nginx.conf file on the remote server
+```
+---
+- name: Configure Web Server
+  hosts: webservers
+  become: yes
+
+  tasks:
+    - name: Copy Nginx configuration file
+      ansible.builtin.template:
+        src: nginx.conf.j2
+        dest: /etc/nginx/nginx.conf
+      notify: Restart Nginx  # This must exactly match the handler name
+
+  handlers:
+    - name: Restart Nginx
+      ansible.builtin.service:
+        name: nginx
+        state: restarted
+
+```
+## Ansible Roles
+Ansible roles let you package and organize tasks, variables, files, templates, and handlers into a standardized directory structure for easy reusability.
+
+### Standard Directory Structure
+A role organizes automation code into specific subfolders:
+- _tasks/main.yml_: The main list of tasks executed by the role.
+- _handlers/main.yml_: Event-driven tasks (like restarting a service) triggered by notifications.
+- _defaults/main.yml_: Low-priority default variables that can be overridden easily.
+- _vars/main.yml_: High-priority variables that are difficult to override.
+- _files/_: Static files that need copying to the target nodes.
+- _templates/_: Dynamic Jinja2 configuration templates.
+- _meta/main.yml_: Metadata, author info, and role dependencies.
+
+### How to Create and Use a Role
+1. Initialize the structure: Run the Galaxy command to generate the standard folders:
+```
+bash
+ansible-galaxy role init my_role
+```
+Use code with caution.
+2. Add tasks: Write your automation logic inside my_role/tasks/main.yml.
+3. Call the role in a playbook: Reference it under the roles keyword:yaml
+```
+- hosts: webservers
+  roles:
+    - my_role
+```
+Use code with caution.
+
+### Best Practices
+
+- Single Responsibility: Keep roles focused on doing one thing well (e.g., separate nginx and mysql roles instead of an all-in-one role). Users on the Ansible Forum generally reach a consensus that small, generic, single-task roles improve maintainability.
+- Use Defaults: Define customizable variables in defaults/ rather than vars/ so other users can override them without fighting variable precedence.
+### Ansible collection
+
+Ansible collections are a standard packaging and distribution format for Ansible content—including playbooks, roles, modules, and plugins—that allow you to organize, version, and share automation code independently of core Ansible releases.
