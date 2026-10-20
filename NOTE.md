@@ -369,3 +369,14 @@ Ansible modules are reusable, standalone scripts that Ansible copies to and exec
 4. Cleanup: Ansible removes the temporary script file from the remote node.
 
 ### Ansible plugin
+Ansible plugins are pieces of reusable code that augument or extend Ansible core functionality.
+
+#### Common Types of Ansible Plugins
+- _Connection Plugins_: Control how Ansible communicates with target hosts (e.g., using native ssh, paramiko, local, or docker). 
+- _Lookup Plugins_: Fetch and pull data from external sources (like reading a local file, checking environment variables, or querying databases) into your playbooks. 
+- _Filter Plugins_: Manipulate and format data inside your playbooks and Jinja2 templates (e.g., parsing strings or transforming JSON data). 
+- _Inventory Plugins_: Dynamically construct the host inventory from various cloud infrastructure providers or data sources (such as an AWS EC2 instance list) instead of relying on a static text file. 
+- _Callback Plugins_: Hook into Ansible's execution lifecycle to capture events. They are commonly used to format terminal output (like printing in JSON) or send notifications to third-party tools like Slack. 
+- _Vars Plugins_: Inject extra variable data into Ansible runs that do not originate from an inventory or a command-line argument (this is how internal features like host_vars and group_vars operate). 
+- _Action Plugins_: Act as front-ends to modules, allowing processing to happen on the controller machine before the actual module executes on the target node. 
+- _Module plugins_
