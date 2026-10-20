@@ -367,3 +367,5 @@ Ansible modules are reusable, standalone scripts that Ansible copies to and exec
 2. Transfer: Ansible packages the module and sends it to a temporary location on the remote managed node (over SSH or WinRM).
 3. Execution: The module runs locally on the managed node, executes the action, and prints a JSON result.
 4. Cleanup: Ansible removes the temporary script file from the remote node.
+
+### Ansible plugin
